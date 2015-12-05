@@ -6,9 +6,9 @@ Student Number:		040754048
 Course Name:		C++ Programming CST8219
 Lab Section:		301
 Assignment Number:	1
-Assignment Name:	FleaBay in C++
-Due Date:			2015/10/19
-Submission Date:	2015/10/20
+Assignment Name:	FleaBay with Overloaded Operators
+Due Date:			2015/11/08
+Submission Date:	2015/11/09
 Professor's Name:	Andrew Taylor
 Purpose:			To register a list of users to the online service Fleabay
 ***************************************************************************************************/
@@ -16,6 +16,7 @@ Purpose:			To register a list of users to the online service Fleabay
 #include <iostream>
 #define IOSTREAM
 #endif // !IOSTREAM
+using namespace std;
 #ifndef ITEM_H
 #include "Item.h"
 #define ITEM_H
@@ -28,7 +29,6 @@ Purpose:			To register a list of users to the online service Fleabay
 #include "FleaBay.h"
 #define FLEA_H
 #endif // !FLEA_H
-using namespace std;
 
 /*******************************************************************************
 Function Name:		FleaBay::FleaBay
@@ -72,13 +72,12 @@ bool FleaBay::Login()
 			tempID = new char[maxIDSize];
 			tempPass = new char[maxIDSize];
 			cout << "Please enter your account ID: ";
-			cin.clear();
-			std::cin.ignore(std::numeric_limits<std::streamsize>::max(), '\n');
-			cin >> tempID;
+			cin.ignore();
+			cin.getline(tempID, maxIDSize);
 			while (++i < numAccounts)
 				{
 					// Check if the ID is not valid
-					if (!strcmp(tempID, accounts[i]->ID))
+					if (!strcmp(tempID, accounts[i]->getID()))
 						break; // Exit loop when match is found
 					else if (i == numAccounts - 1) // Iterated through all the IDs and no match is found
 					{
@@ -90,13 +89,11 @@ bool FleaBay::Login()
 				}
 			i = -1; // Reset i
 			cout << "Please enter your account Password: ";
-			cin.clear();
-			std::cin.ignore(std::numeric_limits<std::streamsize>::max(), '\n');
-			cin >> tempPass;
+			cin.getline(tempPass, maxIDSize);
 			while (++i < numAccounts)
 				{
 					// Check if the password matches to the ID
-					if (!strcmp(tempID, accounts[i]->ID) && !strcmp(tempPass, accounts[i]->PassWord))
+					if (!strcmp(tempID, accounts[i]->getID()) && !strcmp(tempPass, accounts[i]->getPassWord()))
 					{
 						delete tempID;
 						delete tempPass;
@@ -124,18 +121,18 @@ Author:				Bryden Lacelle
 *******************************************************************************/
 bool FleaBay::AddNewAccount()
 {
+	char* ID, *password;
 	int maxIDSize = 50, i = -1;
 	char* tempString = new char[maxIDSize]; // Allocate a temporary buffer for user input
 	ppAccount oldList; // Create a new temporary FleaBay 
 	cout << "Please Enter your account ID" << endl;
-	cin.clear();
-	std::cin.ignore(std::numeric_limits<std::streamsize>::max(), '\n');
-	cin >> tempString; // Get user ID
+	cin.ignore();
+	cin.getline(tempString, maxIDSize); // Get user ID
 	while (++i < numAccounts) // Loop through all the accounts in the database to make ensure the ID is unique
 	{
-		if (!strcmp(tempString, accounts[i]->ID)) // Compare user input with currently known IDs
+		if (!strcmp(tempString, accounts[i]->getID())) // Compare user input with currently known IDs
 		{
-			cout << "is an invalid ID" << tempString; // If a match is found print an error and return to the main menu
+			cout << "is an invalid ID" << tempString; // If a match is not found print an error and return to the main menu
 			delete tempString;
 			return true;
 		}
@@ -144,42 +141,60 @@ bool FleaBay::AddNewAccount()
 	oldList = accounts; // Copy the old list of pointers to pAccounts to the temp FleaBay
 	accounts = new pAccount[numAccounts + 1]; // Allocate memory for a new list of pointers
 	while (++i < numAccounts) { accounts[i] = oldList[i]; } // Copy the old list of pointers over to the newly allocated space in memory
-	accounts[numAccounts] = new (Account); // Allocate memory for a new Account
-	accounts[numAccounts]->ID = new char[strlen(tempString) + 1]; // Allocate the exact amount of memory needed for the user's ID
-	strcpy(accounts[numAccounts]->ID, tempString);
+	ID = new char[strlen(tempString) + 1]; // Allocate the exact amount of memory needed for the user's ID
+	strcpy(ID, tempString);
 
 	cout << "Please Enter your account password" << endl;
-	cin.clear();
-	std::cin.ignore(std::numeric_limits<std::streamsize>::max(), '\n');
-	cin >> tempString; // Get the users password
-	accounts[numAccounts]->PassWord = new char[strlen(tempString) + 1]; // Allocate the exact amount of memory needed for the user's password
-	strcpy(accounts[numAccounts]->PassWord, tempString);
-
+	cin.getline(tempString, maxIDSize); // Get the users password
+	password = new char[strlen(tempString) + 1]; // Allocate the exact amount of memory needed for the user's password
+	strcpy(password, tempString);
+	accounts[numAccounts] = new Account(ID, password);
 	++numAccounts; // Incriment the number of accounts stored in the database
 	delete tempString; // Free the memory allocated for the buffer
 	delete oldList;
+	delete ID;
+	delete password;
 	return true;
 }
 
 /*******************************************************************************
-Function Name:		FleaBay::
-Purpose:			Display all information stored in a FleaBay
-Out Parameters:		bool
+Function Name:		operator[]
+Purpose:			Overload the FleaBay [] operator to print a single Account from
+					FleaBayto the console
+In Parameters:		char*
+Out Parameters		Account
 Version:			1.0
 Author:				Bryden Lacelle
 *******************************************************************************/
-bool FleaBay::Report()
+Account FleaBay::operator[](char* ID) 
 {
 	int i = -1;
-	cout << (!numAccounts ? "**NO ACCOUNTS FOUND**" : "") << endl; // Return an error message if no accounts are found
-	while(++i < numAccounts) // Incriment through all the stored account IDs and print them to the console
+	while (++i < numAccounts) // Loop through all the accounts in the database
 	{
-		cout << "Account ID: " << accounts[i]->ID << endl;
-		accounts[i]->Report();
+		if (!strcmp(ID, accounts[i]->getID())) // When a match is found return the account to be printed to the console
+			return *accounts[i];
 	}
-	return true;
+	return Account("Not a valid account", ""); // If no match is found return an error account
 }
 
+/*******************************************************************************
+Function Name:		operator<<
+Purpose:			Overload the ostream << operator to print a FleaBay to the console
+In Parameters:		ostream&, FleaBayt&
+Out Parameters		ostream&
+Version:			1.0
+Author:				Bryden Lacelle
+*******************************************************************************/
+ostream& operator<<(ostream& stream, FleaBay& fleaBay)
+{
+	int i = -1;
+	stream << (!fleaBay.numAccounts ? "**NO ACCOUNTS FOUND**" : "") << endl; // Return an error message if no accounts are found
+	while(++i < fleaBay.numAccounts) // Incriment through all the stored account IDs and print them to the console
+	{
+		stream << *fleaBay.accounts[i] << endl;
+	}
+	return stream;
+}
 /*******************************************************************************
 Function Name:		FleaBay::~FleaBay
 Purpose:			Destructor for a FleaBay
@@ -190,6 +205,6 @@ FleaBay::~FleaBay()
 {
 	int i = numAccounts;
 	while (--i >= 0)
-		delete accounts[i];
-	delete []accounts;
+		delete accounts[i]; // account[i]
+	delete []accounts; // *accounts
 }
