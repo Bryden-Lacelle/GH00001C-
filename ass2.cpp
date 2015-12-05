@@ -1,5 +1,13 @@
+#include <iostream>
+using namespace std;
+#include "Item.h"
+#include "Account.h"
+#include "FleaBay.h"
+#include <crtdbg.h>
+#define _CRTDBG_MAP_ALLOC
 int main(void)
 {
+	_CrtSetDbgFlag ( _CRTDBG_ALLOC_MEM_DF | _CRTDBG_LEAK_CHECK_DF );
 	bool bRunning = true;
 	char id[256];
 	char response;
